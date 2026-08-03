@@ -1,0 +1,15 @@
+### Register a new user
+POST {{auth_url}}/auth/register
+Content-Type: application/json
+
+{
+  "email": "{{test_email}}",
+  "password": "{{test_password}}"
+}
+
+> {%
+  client.test("status is 201", () => client.assert(response.status === 201, "expected 201, got " + response.status));
+  if (response.status === 201) {
+    client.global.set("user_id", response.body.id);
+  }
+%}

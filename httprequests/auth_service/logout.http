@@ -1,0 +1,11 @@
+### Revoke refresh token
+POST {{auth_url}}/auth/logout
+Content-Type: application/json
+
+{
+  "refresh_token": "{{refresh_token}}"
+}
+
+> {%
+  client.test("status is 204", () => client.assert(response.status === 204, "expected 204, got " + response.status));
+%}

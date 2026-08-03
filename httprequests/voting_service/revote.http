@@ -1,0 +1,8 @@
+### Re-vote (VOTE_CHANGED event — old vote stays in the audit log)
+POST {{voting_url}}/revote
+Content-Type: application/json
+Authorization: Bearer {{access_token}}
+
+{
+  "candidate_id": "candB"
+}

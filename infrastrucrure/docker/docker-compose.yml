@@ -1,0 +1,123 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: voting
+      POSTGRES_PASSWORD: voting
+      POSTGRES_DB: voting
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U voting -d voting"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  kafka:
+    image: apache/kafka:3.7.2
+    environment:
+      KAFKA_NODE_ID: "1"
+      KAFKA_PROCESS_ROLES: controller,broker
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "1"
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: "1"
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: "1"
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: "0"
+    ports:
+      - "9092:9092"
+
+  auth_service:
+    build:
+      context: ../../auth_service
+    environment:
+      HTTP_ADDR: ":8083"
+      POSTGRES_DSN: "postgres://voting:voting@postgres:5432/voting?sslmode=disable"
+      JWT_PRIVATE_KEY_PATH: "/etc/auth/private.pem"
+      JWT_PUBLIC_KEY_PATH: "/etc/auth/public.pem"
+      JWT_ISSUER: "voting-system-auth"
+      JWT_KEY_ID: "auth-1"
+      JWT_ACCESS_TTL: "15m"
+      JWT_REFRESH_TTL: "720h"
+      ADMIN_EMAIL: "${ADMIN_EMAIL:-admin@example.com}"
+    ports:
+      - "8083:8083"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  voting_service:
+    build:
+      context: ../../voting_service
+    environment:
+      HTTP_ADDR: ":8080"
+      POSTGRES_DSN: "postgres://voting:voting@postgres:5432/voting?sslmode=disable"
+      MIGRATIONS_DIR: "/app/migrations"
+      KAFKA_BROKERS: "kafka:9092"
+      KAFKA_TOPIC_VOTES: "vote.events"
+      JWKS_URL: "http://auth_service:8083/.well-known/jwks.json"
+      JWT_ISSUER: "voting-system-auth"
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+      auth_service:
+        condition: service_started
+
+  anonym_service:
+    build:
+      context: ../../anonym_service
+    environment:
+      HTTP_ADDR: ":8081"
+      POSTGRES_DSN: "postgres://voting:voting@postgres:5432/voting?sslmode=disable"
+      MIGRATIONS_DIR: "/app/migrations"
+      KAFKA_BROKERS: "kafka:9092"
+      KAFKA_TOPIC_VOTES: "vote.events"
+      KAFKA_TOPIC_ANONYMIZED: "vote.anonymized"
+      KAFKA_GROUP_ID: "anonym_service"
+    ports:
+      - "8081:8081"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+
+  audit_service:
+    build:
+      context: ../../audit_service
+    environment:
+      HTTP_ADDR: ":8082"
+      POSTGRES_DSN: "postgres://voting:voting@postgres:5432/voting?sslmode=disable"
+      KAFKA_BROKERS: "kafka:9092"
+      KAFKA_TOPIC_ANONYMIZED: "vote.anonymized"
+      KAFKA_GROUP_ID: "audit_service"
+    ports:
+      - "8082:8082"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+
+  frontend:
+    build:
+      context: ../../frontend
+    ports:
+      - "8084:80"
+    depends_on:
+      - voting_service
+      - auth_service
+      - audit_service
+
+volumes:
+  pg_data:

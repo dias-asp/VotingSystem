@@ -1,0 +1,15 @@
+### Rotate refresh token (old one is revoked, new pair captured)
+POST {{auth_url}}/auth/refresh
+Content-Type: application/json
+
+{
+  "refresh_token": "{{refresh_token}}"
+}
+
+> {%
+  client.test("status is 200", () => client.assert(response.status === 200, "expected 200, got " + response.status));
+  if (response.status === 200) {
+    client.global.set("access_token",  response.body.access_token);
+    client.global.set("refresh_token", response.body.refresh_token);
+  }
+%}

@@ -1,0 +1,19 @@
+# Build artifacts
+bin/
+tmp/
+*.exe
+*.test
+coverage.out
+
+# Generated keys
+*.pem
+
+# Env files
+.env
+!.env.example
+
+# OS
+.DS_Store
+
+# Logs
+*.log

@@ -1,0 +1,154 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: voting
+      POSTGRES_PASSWORD: voting
+      POSTGRES_DB: voting
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U voting -d voting"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  kafka:
+    image: apache/kafka:3.7.2
+    environment:
+      KAFKA_NODE_ID: "1"
+      KAFKA_PROCESS_ROLES: controller,broker
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "1"
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: "1"
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: "1"
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: "0"
+    ports:
+      - "9092:9092"
+
+  auth_service:
+    build:
+      context: ../../auth_service
+      dockerfile: Dockerfile.dev
+    environment:
+      HTTP_ADDR: ":8083"
+      POSTGRES_DSN: "postgres://voting:voting@postgres:5432/voting?sslmode=disable"
+      MIGRATIONS_DIR: "/app/migrations"
+      JWT_PRIVATE_KEY_PATH: "/app/tmp/private.pem"
+      JWT_ISSUER: "voting-system-auth"
+      JWT_KEY_ID: "auth-1"
+      JWT_ACCESS_TTL: "15m"
+      JWT_REFRESH_TTL: "720h"
+      ADMIN_EMAIL: "${ADMIN_EMAIL:-admin@example.com}"
+    volumes:
+      - ../../auth_service:/app
+      - go_mod_cache:/go/pkg/mod
+      - go_build_cache:/root/.cache/go-build
+    ports:
+      - "8083:8083"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  voting_service:
+    build:
+      context: ../../voting_service
+      dockerfile: Dockerfile.dev
+    environment:
+      HTTP_ADDR: ":8080"
+      POSTGRES_DSN: "postgres://voting:voting@postgres:5432/voting?sslmode=disable"
+      MIGRATIONS_DIR: "/app/migrations"
+      KAFKA_BROKERS: "kafka:9092"
+      KAFKA_TOPIC_VOTES: "vote.events"
+      JWKS_URL: "http://auth_service:8083/.well-known/jwks.json"
+      JWT_ISSUER: "voting-system-auth"
+    volumes:
+      - ../../voting_service:/app
+      - go_mod_cache:/go/pkg/mod
+      - go_build_cache:/root/.cache/go-build
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+      auth_service:
+        condition: service_started
+
+  anonym_service:
+    build:
+      context: ../../anonym_service
+      dockerfile: Dockerfile.dev
+    environment:
+      HTTP_ADDR: ":8081"
+      POSTGRES_DSN: "postgres://voting:voting@postgres:5432/voting?sslmode=disable"
+      MIGRATIONS_DIR: "/app/migrations"
+      KAFKA_BROKERS: "kafka:9092"
+      KAFKA_TOPIC_VOTES: "vote.events"
+      KAFKA_TOPIC_ANONYMIZED: "vote.anonymized"
+      KAFKA_GROUP_ID: "anonym_service"
+    volumes:
+      - ../../anonym_service:/app
+      - go_mod_cache:/go/pkg/mod
+      - go_build_cache:/root/.cache/go-build
+    ports:
+      - "8081:8081"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+
+  audit_service:
+    build:
+      context: ../../audit_service
+      dockerfile: Dockerfile.dev
+    environment:
+      HTTP_ADDR: ":8082"
+      POSTGRES_DSN: "postgres://voting:voting@postgres:5432/voting?sslmode=disable"
+      KAFKA_BROKERS: "kafka:9092"
+      KAFKA_TOPIC_ANONYMIZED: "vote.anonymized"
+      KAFKA_GROUP_ID: "audit_service"
+    volumes:
+      - ../../audit_service:/app
+      - go_mod_cache:/go/pkg/mod
+      - go_build_cache:/root/.cache/go-build
+    ports:
+      - "8082:8082"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+
+  frontend:
+    build:
+      context: ../../frontend
+      dockerfile: Dockerfile.dev
+    environment:
+      VITE_API_PROXY: "http://voting_service:8080"
+      VITE_AUTH_PROXY: "http://auth_service:8083"
+      VITE_AUDIT_PROXY: "http://audit_service:8082"
+    volumes:
+      - ../../frontend:/app
+      - frontend_node_modules:/app/node_modules
+    ports:
+      - "3000:3000"
+    depends_on:
+      - voting_service
+      - auth_service
+      - audit_service
+
+volumes:
+  pg_data:
+  go_mod_cache:
+  go_build_cache:
+  frontend_node_modules:

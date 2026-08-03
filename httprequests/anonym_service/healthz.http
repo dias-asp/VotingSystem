@@ -1,0 +1,3 @@
+### Liveness probe — anonym_service has no public HTTP API beyond health
+### (Kafka in: vote.events; Kafka out: vote.anonymized)
+GET {{anonym_url}}/healthz

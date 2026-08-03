@@ -1,0 +1,2 @@
+### Public keys for verifying access tokens (used by other services)
+GET {{auth_url}}/.well-known/jwks.json

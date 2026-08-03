@@ -1,0 +1,6 @@
+### Cancel current vote (VOTE_CANCELLED event) — user_id is taken from JWT sub claim
+POST {{voting_url}}/cancel-vote
+Content-Type: application/json
+Authorization: Bearer {{access_token}}
+
+{}

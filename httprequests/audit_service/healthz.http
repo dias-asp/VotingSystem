@@ -1,0 +1,2 @@
+### Liveness probe
+GET {{audit_url}}/healthz

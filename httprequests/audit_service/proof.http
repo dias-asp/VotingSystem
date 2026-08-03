@@ -1,0 +1,11 @@
+### Fetch Merkle inclusion proof for an event
+### Replace {{event_id}} via: client.global.set("event_id", "...") or env file
+GET {{audit_url}}/proof/{{event_id}}
+
+> {%
+  if (response.status === 200) {
+    client.global.set("merkle_root", response.body.merkle_root);
+    client.global.set("leaf_hash",   response.body.leaf_hash);
+    client.global.set("proof_steps", JSON.stringify(response.body.steps));
+  }
+%}

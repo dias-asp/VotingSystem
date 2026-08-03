@@ -1,0 +1,3 @@
+### Tally — latest event per mdmId wins
+GET {{voting_url}}/results
+Authorization: Bearer {{access_token}}

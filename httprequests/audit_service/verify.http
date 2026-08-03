@@ -1,0 +1,10 @@
+### Verify a Merkle proof against a known root
+### Body shape mirrors the response from GET /proof/{eventID}
+POST {{audit_url}}/verify
+Content-Type: application/json
+
+{
+  "leaf_hash":   "{{leaf_hash}}",
+  "merkle_root": "{{merkle_root}}",
+  "steps":       []
+}

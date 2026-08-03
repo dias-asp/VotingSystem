@@ -1,0 +1,8 @@
+### Cast a vote (VOTE_CAST event) — user_id is taken from JWT sub claim
+POST {{voting_url}}/vote
+Content-Type: application/json
+Authorization: Bearer {{access_token}}
+
+{
+  "candidate_id": "candA"
+}
