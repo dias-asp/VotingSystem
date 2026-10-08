@@ -41,7 +41,7 @@ services:
       POSTGRES_DSN: "postgres://voting:voting@postgres:5432/voting?sslmode=disable"
       JWT_PRIVATE_KEY_PATH: "/etc/auth/private.pem"
       JWT_PUBLIC_KEY_PATH: "/etc/auth/public.pem"
-      JWT_ISSUER: "voting-system-auth"
+      JWT_ISSUER: "ngvs-auth"
       JWT_KEY_ID: "auth-1"
       JWT_ACCESS_TTL: "15m"
       JWT_REFRESH_TTL: "720h"
@@ -62,7 +62,7 @@ services:
       KAFKA_BROKERS: "kafka:9092"
       KAFKA_TOPIC_VOTES: "vote.events"
       JWKS_URL: "http://auth_service:8083/.well-known/jwks.json"
-      JWT_ISSUER: "voting-system-auth"
+      JWT_ISSUER: "ngvs-auth"
     ports:
       - "8080:8080"
     depends_on:

@@ -25,7 +25,7 @@ func Load() (Config, error) {
 		PostgresDSN:       getEnv("POSTGRES_DSN", ""),
 		MigrationsDir:     getEnv("MIGRATIONS_DIR", "./migrations"),
 		JWTPrivateKeyPath: getEnv("JWT_PRIVATE_KEY_PATH", "/etc/auth/private.pem"),
-		JWTIssuer:         getEnv("JWT_ISSUER", "voting-system-auth"),
+		JWTIssuer:         getEnv("JWT_ISSUER", "ngvs-auth"),
 		JWTKeyID:          getEnv("JWT_KEY_ID", "auth-1"),
 		AccessTTL:         getEnvDuration("JWT_ACCESS_TTL", 15*time.Minute),
 		RefreshTTL:        getEnvDuration("JWT_REFRESH_TTL", 30*24*time.Hour),

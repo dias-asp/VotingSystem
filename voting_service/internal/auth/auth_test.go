@@ -64,8 +64,8 @@ func TestVerifier_HappyPath(t *testing.T) {
 	if err := keys.Refresh(context.Background()); err != nil {
 		t.Fatalf("refresh: %v", err)
 	}
-	v := NewVerifier(keys, "voting-system-auth")
-	tok := issueToken(t, key, "test-1", "voting-system-auth", "user-42", time.Now().Add(time.Hour))
+	v := NewVerifier(keys, "ngvs-auth")
+	tok := issueToken(t, key, "test-1", "ngvs-auth", "user-42", time.Now().Add(time.Hour))
 
 	c, err := v.Verify(tok)
 	if err != nil {
@@ -83,8 +83,8 @@ func TestVerifier_RejectsExpired(t *testing.T) {
 
 	keys := NewKeySet(srv.URL)
 	_ = keys.Refresh(context.Background())
-	v := NewVerifier(keys, "voting-system-auth")
-	tok := issueToken(t, key, "test-1", "voting-system-auth", "user-42", time.Now().Add(-time.Minute))
+	v := NewVerifier(keys, "ngvs-auth")
+	tok := issueToken(t, key, "test-1", "ngvs-auth", "user-42", time.Now().Add(-time.Minute))
 
 	_, err := v.Verify(tok)
 	if !errors.Is(err, ErrExpiredToken) {
@@ -99,7 +99,7 @@ func TestVerifier_RejectsWrongIssuer(t *testing.T) {
 
 	keys := NewKeySet(srv.URL)
 	_ = keys.Refresh(context.Background())
-	v := NewVerifier(keys, "voting-system-auth")
+	v := NewVerifier(keys, "ngvs-auth")
 	tok := issueToken(t, key, "test-1", "someone-else", "user-42", time.Now().Add(time.Hour))
 
 	if _, err := v.Verify(tok); !errors.Is(err, ErrInvalidToken) {
@@ -113,8 +113,8 @@ func TestVerifier_RejectsUnknownKid(t *testing.T) {
 	defer srv.Close()
 	keys := NewKeySet(srv.URL)
 	_ = keys.Refresh(context.Background())
-	v := NewVerifier(keys, "voting-system-auth")
-	tok := issueToken(t, key, "other-kid", "voting-system-auth", "user-42", time.Now().Add(time.Hour))
+	v := NewVerifier(keys, "ngvs-auth")
+	tok := issueToken(t, key, "other-kid", "ngvs-auth", "user-42", time.Now().Add(time.Hour))
 
 	if _, err := v.Verify(tok); !errors.Is(err, ErrUnknownKey) {
 		t.Fatalf("want ErrUnknownKey, got %v", err)
@@ -127,8 +127,8 @@ func TestVerifier_RejectsTamperedSignature(t *testing.T) {
 	defer srv.Close()
 	keys := NewKeySet(srv.URL)
 	_ = keys.Refresh(context.Background())
-	v := NewVerifier(keys, "voting-system-auth")
-	tok := issueToken(t, key, "test-1", "voting-system-auth", "user-42", time.Now().Add(time.Hour))
+	v := NewVerifier(keys, "ngvs-auth")
+	tok := issueToken(t, key, "test-1", "ngvs-auth", "user-42", time.Now().Add(time.Hour))
 	parts := strings.Split(tok, ".")
 	parts[2] = base64.RawURLEncoding.EncodeToString([]byte("garbage"))
 	if _, err := v.Verify(strings.Join(parts, ".")); !errors.Is(err, ErrInvalidToken) {
@@ -142,7 +142,7 @@ func TestMiddleware_PassesClaimsAndRejectsMissing(t *testing.T) {
 	defer srv.Close()
 	keys := NewKeySet(srv.URL)
 	_ = keys.Refresh(context.Background())
-	v := NewVerifier(keys, "voting-system-auth")
+	v := NewVerifier(keys, "ngvs-auth")
 
 	var seenSub string
 	next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -156,7 +156,7 @@ func TestMiddleware_PassesClaimsAndRejectsMissing(t *testing.T) {
 	h := Middleware(v)(next)
 
 	r := httptest.NewRequest(http.MethodGet, "/", nil)
-	tok := issueToken(t, key, "test-1", "voting-system-auth", "u-1", time.Now().Add(time.Hour))
+	tok := issueToken(t, key, "test-1", "ngvs-auth", "u-1", time.Now().Add(time.Hour))
 	r.Header.Set("Authorization", "Bearer "+tok)
 	rec := httptest.NewRecorder()
 	h.ServeHTTP(rec, r)

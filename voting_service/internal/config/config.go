@@ -31,7 +31,7 @@ func Load() (Config, error) {
 		KafkaTopicVotes:  getEnv("KAFKA_TOPIC_VOTES", "vote.events"),
 		ShutdownTimeout:  getEnvDuration("SHUTDOWN_TIMEOUT", 10*time.Second),
 		JWKSURL:          getEnv("JWKS_URL", ""),
-		JWTIssuer:        getEnv("JWT_ISSUER", "voting-system-auth"),
+		JWTIssuer:        getEnv("JWT_ISSUER", "ngvs-auth"),
 		JWKSRefreshEvery: getEnvDuration("JWKS_REFRESH_EVERY", 5*time.Minute),
 		OutboxInterval:   getEnvDuration("OUTBOX_INTERVAL", time.Second),
 		OutboxBatchSize:  getEnvInt("OUTBOX_BATCH_SIZE", 100),

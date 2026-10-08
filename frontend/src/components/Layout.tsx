@@ -22,7 +22,7 @@ export function Layout() {
   return (
     <div className="min-h-screen flex flex-col">
       <header className="bg-slate-900 text-slate-100 px-6 py-3 flex items-center gap-6">
-        <Link to="/" className="font-semibold">Voting System</Link>
+        <Link to="/" className="font-semibold">NGVS</Link>
         {user && <Link to="/polls" className="hover:underline">Polls</Link>}
         {user?.role === "admin" && <Link to="/admin" className="hover:underline">Admin</Link>}
         <span className="ml-auto text-sm text-slate-300">

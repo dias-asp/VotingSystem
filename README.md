@@ -1,4 +1,4 @@
-# Anonymous Voting System
+# NGVS — Next Generation Voting System
 
 A distributed online voting system with vote anonymization and cryptographic auditing built on a blockchain-like chain of blocks.
 
